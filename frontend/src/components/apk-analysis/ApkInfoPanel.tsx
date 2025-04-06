@@ -26,7 +26,7 @@ import {
     Storage as StorageIcon,
     Code as CodeIcon,
     ArrowForward as ArrowForwardIcon
-} from '@mui/icons-material';
+} from "@mui/icons-material";
 
 // APK Info type
 interface ApkInfo {
