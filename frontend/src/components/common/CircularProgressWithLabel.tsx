@@ -1,6 +1,6 @@
 // frontend/src/components/common/CircularProgressWithLabel.tsx
 import React from 'react';
-import { Box, CircularProgress, Typography } from '@mui/material';
+import { Box, CircularProgress, Typography, useTheme } from '@mui/material';
 
 interface CircularProgressWithLabelProps {
     value: number;
@@ -15,15 +15,36 @@ const CircularProgressWithLabel: React.FC<CircularProgressWithLabelProps> = ({
                                                                                  thickness = 4,
                                                                                  color
                                                                              }) => {
+    const theme = useTheme();
+
     return (
         <Box position="relative" display="inline-flex">
-            <CircularProgress
-                variant="determinate"
-                value={value}
-                size={size}
-                thickness={thickness}
-                sx={{ color: color }}
-            />
+            <Box
+                sx={{
+                    position: 'relative',
+                    display: 'inline-flex',
+                }}
+            >
+                <CircularProgress
+                    variant="determinate"
+                    value={100}
+                    size={size}
+                    thickness={thickness}
+                    sx={{ color: theme.palette.grey[200] }}
+                />
+                <CircularProgress
+                    variant="determinate"
+                    value={value}
+                    size={size}
+                    thickness={thickness}
+                    sx={{
+                        position: 'absolute',
+                        left: 0,
+                        color: color,
+                        top: 0
+                    }}
+                />
+            </Box>
             <Box
                 sx={{
                     top: 0,
@@ -37,12 +58,12 @@ const CircularProgressWithLabel: React.FC<CircularProgressWithLabelProps> = ({
                 }}
             >
                 <Typography
-                    variant="h5"
+                    variant="h4"
                     component="div"
                     color={color || 'text.primary'}
                     sx={{ fontWeight: 'bold' }}
                 >
-                    {value}
+                    {Math.round(value)}
                 </Typography>
             </Box>
         </Box>

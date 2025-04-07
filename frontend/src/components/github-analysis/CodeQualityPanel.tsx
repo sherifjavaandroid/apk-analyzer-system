@@ -27,6 +27,7 @@ import {
     AccordionDetails,
     Stack,
     Tooltip,
+    IconButton,
     useTheme
 } from '@mui/material';
 import {
@@ -81,6 +82,7 @@ const CodeQualityPanel: React.FC<CodeQualityPanelProps> = ({ codeQuality }) => {
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(5);
     const [filter, setFilter] = useState<string | null>(null);
+    const [expandedIssue, setExpandedIssue] = useState<string | null>(null);
 
     if (!codeQuality) {
         return (
@@ -175,6 +177,11 @@ const CodeQualityPanel: React.FC<CodeQualityPanelProps> = ({ codeQuality }) => {
     const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
         setRowsPerPage(parseInt(event.target.value, 10));
         setPage(0);
+    };
+
+    // Handle issue expansion
+    const handleIssueExpansion = (issueId: string) => {
+        setExpandedIssue(expandedIssue === issueId ? null : issueId);
     };
 
     return (
@@ -420,4 +427,219 @@ const CodeQualityPanel: React.FC<CodeQualityPanelProps> = ({ codeQuality }) => {
                                         />
                                     )}
                                     <Tooltip title="Filter">
-                                        <IconButton
+                                        <IconButton>
+                                            <FilterListIcon />
+                                        </IconButton>
+                                    </Tooltip>
+                                    <Tooltip title="Search">
+                                        <IconButton>
+                                            <SearchIcon />
+                                        </IconButton>
+                                    </Tooltip>
+                                </Box>
+                            }
+                        />
+                        <Divider />
+                        <TableContainer>
+                            <Table size="small">
+                                <TableHead>
+                                    <TableRow>
+                                        <TableCell>Severity</TableCell>
+                                        <TableCell>Issue</TableCell>
+                                        <TableCell>File</TableCell>
+                                        <TableCell>Line</TableCell>
+                                    </TableRow>
+                                </TableHead>
+                                <TableBody>
+                                    {filteredIssues
+                                        .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                                        .map((issue) => (
+                                            <TableRow
+                                                key={issue.issue_id}
+                                                hover
+                                                onClick={() => handleIssueExpansion(issue.issue_id)}
+                                                sx={{ cursor: 'pointer' }}
+                                            >
+                                                <TableCell>
+                                                    <Chip
+                                                        label={issue.severity.toUpperCase()}
+                                                        size="small"
+                                                        sx={{
+                                                            backgroundColor: `${getSeverityColor(issue.severity)}20`,
+                                                            color: getSeverityColor(issue.severity),
+                                                            fontWeight: 500
+                                                        }}
+                                                    />
+                                                </TableCell>
+                                                <TableCell>{issue.title}</TableCell>
+                                                <TableCell>
+                                                    {issue.file_path ? (
+                                                        <Typography variant="body2" noWrap sx={{ maxWidth: 150 }}>
+                                                            {issue.file_path.split('/').pop()}
+                                                        </Typography>
+                                                    ) : (
+                                                        "Unknown"
+                                                    )}
+                                                </TableCell>
+                                                <TableCell>{issue.line_number || 'N/A'}</TableCell>
+                                            </TableRow>
+                                        ))}
+                                    {filteredIssues.length === 0 && (
+                                        <TableRow>
+                                            <TableCell colSpan={4} align="center" sx={{ py: 3 }}>
+                                                <Typography variant="body2" color="text.secondary">
+                                                    No issues found
+                                                </Typography>
+                                            </TableCell>
+                                        </TableRow>
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </TableContainer>
+                        <TablePagination
+                            rowsPerPageOptions={[5, 10, 25]}
+                            component="div"
+                            count={filteredIssues.length}
+                            rowsPerPage={rowsPerPage}
+                            page={page}
+                            onPageChange={handleChangePage}
+                            onRowsPerPageChange={handleChangeRowsPerPage}
+                        />
+                    </Card>
+                </Grid>
+
+                {/* Issue Details */}
+                {expandedIssue && (
+                    <Grid item xs={12}>
+                        <Card>
+                            <CardHeader
+                                title="Issue Details"
+                                titleTypographyProps={{ variant: 'h6' }}
+                                avatar={<TextSnippetIcon />}
+                            />
+                            <Divider />
+                            <CardContent>
+                                {filteredIssues
+                                    .filter(issue => issue.issue_id === expandedIssue)
+                                    .map(issue => (
+                                        <Box key={issue.issue_id}>
+                                            <Typography variant="h6" gutterBottom color={getSeverityColor(issue.severity)}>
+                                                {issue.title}
+                                            </Typography>
+
+                                            <Typography variant="subtitle2" gutterBottom sx={{ mt: 2 }}>
+                                                Description
+                                            </Typography>
+                                            <Typography variant="body2" paragraph>
+                                                {issue.description}
+                                            </Typography>
+
+                                            {(issue.file_path || issue.line_number) && (
+                                                <>
+                                                    <Typography variant="subtitle2" gutterBottom>
+                                                        Location
+                                                    </Typography>
+                                                    <Paper variant="outlined" sx={{ p: 2, bgcolor: 'background.default', mb: 2 }}>
+                                                        <Stack direction="row" spacing={1} alignItems="center">
+                                                            <DescriptionIcon fontSize="small" color="action" />
+                                                            <Typography variant="body2">
+                                                                {issue.file_path || 'Unknown file'}
+                                                                {issue.line_number && ` (Line: ${issue.line_number}${issue.column ? `, Column: ${issue.column}` : ''})`}
+                                                            </Typography>
+                                                        </Stack>
+                                                    </Paper>
+                                                </>
+                                            )}
+
+                                            {issue.source && (
+                                                <>
+                                                    <Typography variant="subtitle2" gutterBottom>
+                                                        Source Code
+                                                    </Typography>
+                                                    <Paper variant="outlined" sx={{ p: 2, bgcolor: 'background.default', mb: 2 }}>
+                                                        <Typography variant="body2" component="pre" sx={{
+                                                            fontFamily: 'monospace',
+                                                            whiteSpace: 'pre-wrap',
+                                                            wordBreak: 'break-all',
+                                                            overflowX: 'auto',
+                                                            fontSize: '0.8rem'
+                                                        }}>
+                                                            {issue.source}
+                                                        </Typography>
+                                                    </Paper>
+                                                </>
+                                            )}
+
+                                            {issue.recommendation && (
+                                                <>
+                                                    <Typography variant="subtitle2" gutterBottom>
+                                                        Recommendation
+                                                    </Typography>
+                                                    <Paper variant="outlined" sx={{ p: 2, bgcolor: `${theme.palette.info.main}10` }}>
+                                                        <Typography variant="body2">
+                                                            {issue.recommendation}
+                                                        </Typography>
+                                                    </Paper>
+                                                </>
+                                            )}
+                                        </Box>
+                                    ))}
+                            </CardContent>
+                        </Card>
+                    </Grid>
+                )}
+            </Grid>
+        </Box>
+    );
+};
+
+// Helper component for circular progress with label
+const CircularProgressWithLabel: React.FC<{ value: number; color?: string, size?: number }> = ({ value, color, size = 100 }) => {
+    const theme = useTheme();
+
+    return (
+        <Box sx={{ position: 'relative', display: 'inline-flex' }}>
+            <CircularProgress
+                variant="determinate"
+                value={100}
+                size={size}
+                thickness={4}
+                sx={{ color: theme.palette.grey[200] }}
+            />
+            <CircularProgress
+                variant="determinate"
+                value={value}
+                size={size}
+                thickness={4}
+                sx={{
+                    position: 'absolute',
+                    left: 0,
+                    color: color,
+                }}
+            />
+            <Box
+                sx={{
+                    top: 0,
+                    left: 0,
+                    bottom: 0,
+                    right: 0,
+                    position: 'absolute',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                }}
+            >
+                <Typography
+                    variant="h4"
+                    component="div"
+                    color={color || 'text.primary'}
+                    sx={{ fontWeight: 'bold' }}
+                >
+                    {Math.round(value)}
+                </Typography>
+            </Box>
+        </Box>
+    );
+};
+
+export default CodeQualityPanel;
